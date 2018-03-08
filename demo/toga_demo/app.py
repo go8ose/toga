@@ -65,7 +65,11 @@ class TogaDemo(toga.App):
         cmd1 = toga.Command(self.action1, 'Action 1', tooltip='Perform action 1', icon=os.path.join(os.path.dirname(__file__), 'icons/brutus-32.png'))
         cmd2 = toga.Command(self.action2, 'Action 2', tooltip='Perform action 2', icon=toga.Icon.TIBERIUS_ICON)
 
-        self.main_window.toolbar.add(cmd1, cmd2)
+        # Demonstrate opening a new window
+        self.number_pancakes_preferred = 1
+        cmd3 = toga.Command(self.action3, 'Action 3', tooltip='Change how many pancakes preferred', icon=os.path.join(os.path.dirname(__file__), 'icons/brutus-32.png'))
+
+        self.main_window.toolbar.add(cmd1, cmd2, cmd3)
 
         self.main_window.content = split
 
@@ -87,6 +91,39 @@ class TogaDemo(toga.App):
         else:
             self.main_window.info_dialog('Shucks...', "Well aren't you a spoilsport... :-(")
 
+    def action3(self, widget):
+        ewd = ExtraWindowDemo(self)
+        ewd.show()
+
+
+class ExtraWindowDemo(object):
+    def __init__(self, app):
+        self.app = app
+        self.window = toga.Window()
+        self.window.app = app
+        content = toga.Box(style=Pack(direction=COLUMN))
+        content.add(toga.Label('How many pancakes do you like in the morning?'))
+        self.answer = toga.NumberInput(
+            on_change = self.set_pancakes,
+        )
+        self.answer.value = self.app.number_pancakes_preferred
+        content.add(self.answer)
+        self.button = toga.Button(
+            'Close',
+            on_press=self.button_handler,
+            style=Pack(padding=20),
+        )
+        content.add(self.button)
+        self.window.content = content
+
+    def show(self):
+        self.window.show()
+
+    def button_handler(self, widget):
+        self.window.close()
+
+    def set_pancakes(self, widget):
+        self.app.number_pancakes_preferred = widget.value
 
 def main():
     return TogaDemo('Toga Demo', 'org.pybee.toga-demo')
