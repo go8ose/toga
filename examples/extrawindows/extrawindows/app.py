@@ -3,41 +3,54 @@ from toga.style import Pack
 from toga.constants import COLUMN, ROW
 
 
-class ExampleTestWidgetApp(toga.App):
+class ExampleExtraWindowsApp(toga.App):
     # Button callback functions
-    def do_stuff(self, widget, **kwargs):
-        self.label.text = "Do stuff."
+    def do_new(self, widget, **kwargs):
+        w = ExtraWindow()
+        window_name = 'Window ' + str(len(self.extra_windows.keys()))
+        self.extra_windows[window_name] = w
+        self.window_list.data.insert(0, window_name)
+        w.app = self
+        w.show()
 
-    def do_clear(self, widget, **kwargs):
-        self.label.text = "Ready."
+    def do_close(self, widget, **kwargs):
+        # Get selected table item, find the window, close it.
+        window_name = self.window_list.selection.windows
+        w = self.extra_windows[window_name]
+        w.close()
+        pass
 
     def startup(self):
         # Set up main window
         self.main_window = toga.MainWindow(self.name)
-
-        # Label to show responses.
-        self.label = toga.Label('Ready.')
-
-        widget = toga.TestWidget()
+        self.extra_windows = {}
 
         # Buttons
         btn_style = Pack(flex=1)
-        btn_do_stuff = toga.Button('Do stuff', on_press=self.do_stuff, style=btn_style)
-        btn_clear = toga.Button('Clear', on_press=self.do_clear, style=btn_style)
+        btn_new = toga.Button('New Window', on_press=self.do_new, style=btn_style)
+        # TODO: make btn_close invisible to start with, and only visible
+        # once there are extra windows, and selection has been made.
+        btn_close = toga.Button('Close Window', on_press=self.do_close, style=btn_style)
         btn_box = toga.Box(
             children=[
-                btn_do_stuff,
-                btn_clear
+                btn_new,
+                btn_close
             ],
-            style=Pack(direction=ROW)
+            style=Pack(direction=COLUMN)
         )
+
+        self.window_list = toga.Table(['Windows'])
+        # TODO: setup a handler so you can select an item, and then cause
+        # focus to switch to that item. Maybe right click for a menu, or
+        # double tap on it, or select it and press a third button (which
+        # only displays when there is a selection?)
 
         # Outermost box
         outer_box = toga.Box(
-            children=[btn_box, widget, self.label],
+            children=[self.window_list, btn_box],
             style=Pack(
                 flex=1,
-                direction=COLUMN,
+                direction=ROW,
                 padding=10,
                 width=500,
                 height=300
@@ -50,9 +63,15 @@ class ExampleTestWidgetApp(toga.App):
         # Show the main window
         self.main_window.show()
 
+class ExtraWindow(toga.Window):
+    # TODO: Add a button to switch back to main window
+    # TODO: Add something that's unique to this window (maybe a random
+    # number?) so when you come back to it, you know 
+    # TODO: default the windo
+    pass
 
 def main():
-    return ExampleTestWidgetApp('Extra Windows', 'org.pybee.widgets.extrawindows')
+    return ExampleExtraWindowsApp('Extra Windows', 'org.pybee.widgets.extrawindows')
 
 
 if __name__ == '__main__':

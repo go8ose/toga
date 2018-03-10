@@ -1,7 +1,7 @@
 Extra Windows
 =============
 
-Test app for the Extra Windows widget.
+Test app to demonstrate opening and closing extra windows.
 
 Quickstart
 ~~~~~~~~~~
