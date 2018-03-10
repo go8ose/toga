@@ -11,14 +11,22 @@ class ExampleExtraWindowsApp(toga.App):
         self.extra_windows[window_name] = w
         self.window_list.data.insert(0, window_name)
         w.app = self
+        self.btn_close.enabled = True
         w.show()
 
     def do_close(self, widget, **kwargs):
         # Get selected table item, find the window, close it.
-        window_name = self.window_list.selection.windows
-        w = self.extra_windows[window_name]
-        w.close()
-        pass
+        try:
+            window_name = self.window_list.selection.windows
+            w = self.extra_windows[window_name]
+            w.close()
+            # TODO: remove the window from self.window_list. Maybe add it to
+            # a closed windows list?
+        except AttributeError:
+            # Table throws AttributeError if no selection.
+            # TODO: Confirm this is really part of the API for a Table, and
+            # if not raise an issue (or raise an issue about documentation)?
+            pass
 
     def startup(self):
         # Set up main window
@@ -28,13 +36,12 @@ class ExampleExtraWindowsApp(toga.App):
         # Buttons
         btn_style = Pack(flex=1)
         btn_new = toga.Button('New Window', on_press=self.do_new, style=btn_style)
-        # TODO: make btn_close invisible to start with, and only visible
-        # once there are extra windows, and selection has been made.
-        btn_close = toga.Button('Close Window', on_press=self.do_close, style=btn_style)
+        self.btn_close = toga.Button('Close Window', on_press=self.do_close, style=btn_style)
+        self.btn_close.enabled=False
         btn_box = toga.Box(
             children=[
                 btn_new,
-                btn_close
+                self.btn_close
             ],
             style=Pack(direction=COLUMN)
         )
