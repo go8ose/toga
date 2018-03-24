@@ -6,10 +6,10 @@ from toga.constants import COLUMN, ROW
 class ExampleExtraWindowsApp(toga.App):
     # Button callback functions
     def do_new(self, widget, **kwargs):
-        window_name = 'Window ' + str(len(self.extra_windows.keys()))
+        window_name = 'Window ' + str(len(self.windows))
         w = ExtraWindow()
         w.startup(window_name)
-        self.extra_windows[window_name] = w
+        self.windows[window_name] = {'state': 'open', 'window': w}
         self.update_table_contents()
         w.app = self
         self.btn_close.enabled = True
@@ -17,35 +17,28 @@ class ExampleExtraWindowsApp(toga.App):
 
     def do_close(self, widget, **kwargs):
         # Get selected table item, find the window, close it.
-        try:
-            window_name = self.table_open_windows.selection.open_windows
-            if window_name == None:
-                return
-            w = self.extra_windows[window_name]
-            del self.extra_windows[window_name]
-            self.closed_windows[window_name] = w
-            self.update_table_contents()
-            w.close()
-        except AttributeError:
-            # Table throws AttributeError if no selection.
-            # TODO: I don't think this is really meant to be part of the
-            # API, I've raised https://github.com/pybee/toga/issues/401
-            pass
+        window_name = self.table_open_windows.selection.open_windows
+        if window_name == None:
+            return
+        w = self.windows[window_name]
+        w['state'] = 'closed'
+        self.update_table_contents()
+        w['window'].close()
 
     def update_table_contents(self):
         self.table_open_windows.data.clear()
-        for i in self.extra_windows.keys():
-            self.table_open_windows.data.append(i)
-
         self.table_closed_windows.data.clear()
-        for i in self.closed_windows.keys():
-            self.table_closed_windows.data.append(i)
+        for (name, w) in self.windows.items():
+            assert w['state'] in ('open', 'closed')
+            if w['state'] == 'open':
+                self.table_open_windows.data.append(name)
+            elif w['state'] == 'closed':
+                self.table_closed_windows.data.append(name)
 
     def startup(self):
         # Set up main window
         self.main_window = toga.MainWindow(self.name)
-        self.extra_windows = {}
-        self.closed_windows = {}
+        self.windows = dict()
 
         # Buttons
         btn_style = Pack(flex=1)
