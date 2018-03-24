@@ -10,22 +10,50 @@ class ExampleExtraWindowsApp(toga.App):
         w = ExtraWindow()
         w.startup(window_name)
         self.windows[window_name] = {'state': 'open', 'window': w}
-        self.update_table_contents()
+        self.update()
         w.app = self
-        self.btn_close.enabled = True
         w.show()
 
+    # Get selected table item, find the window, close it.
     def do_close(self, widget, **kwargs):
-        # Get selected table item, find the window, close it.
-        window_name = self.table_open_windows.selection.open_windows
-        if window_name == None:
+        selection = self.table_open_windows.selection
+        if selection == None:
             return
+        window_name = selection.open_windows
         w = self.windows[window_name]
         w['state'] = 'closed'
-        self.update_table_contents()
+        self.update()
         w['window'].close()
 
-    def update_table_contents(self):
+
+    def do_focus(self, widget, **kwargs):
+        selection = self.table_open_windows.selection
+        if selection == None:
+            return
+        window_name = selection.open_windows
+        w = self.windows[window_name]
+        if w['state'] != 'open':
+            return
+
+        w['window'].focus()
+
+    def do_reopen(self, widget, **kwargs):
+        '''Re-open a closed window'''
+        selection = self.table_closed_windows.selection
+        if selection == None:
+            return
+        window_name = selection.closed_windows
+        w = self.windows[window_name]
+
+        assert w['state'] == 'closed'
+
+        w['window'].show()
+        w['state'] = 'open'
+        self.update()
+
+    def update(self):
+        '''Update what is displayed in the tables, and enable/disable some
+        buttons as appropriate'''
         self.table_open_windows.data.clear()
         self.table_closed_windows.data.clear()
         for (name, w) in self.windows.items():
@@ -35,51 +63,77 @@ class ExampleExtraWindowsApp(toga.App):
             elif w['state'] == 'closed':
                 self.table_closed_windows.data.append(name)
 
+        # enable/disable the top box buttons, for open windows
+        if len([w for w in self.windows.values() if w['state'] == 'open']) == 0:
+            self.btn_close.enabled = False
+            self.btn_focus.enabled = False
+        else:
+            self.btn_close.enabled = True
+            self.btn_focus.enabled = True
+
+        # enable/disable the bottom box buttons, for closed windows
+        if len([w for w in self.windows.values() if w['state'] == 'closed']) == 0:
+            self.btn_reopen.enabled = False
+        else:
+            self.btn_reopen.enabled = True
+
     def startup(self):
         # Set up main window
         self.main_window = toga.MainWindow(self.name)
         self.windows = dict()
 
-        # Buttons
+        # Buttons next to the open windows table
         btn_style = Pack(flex=1)
-        btn_new = toga.Button('New Window', on_press=self.do_new, style=btn_style)
+        self.btn_new = toga.Button('New Window', on_press=self.do_new, style=btn_style)
         self.btn_close = toga.Button('Close Window', on_press=self.do_close, style=btn_style)
-        self.btn_close.enabled=False
-        btn_box = toga.Box(
+        self.btn_focus = toga.Button('Focus Window', on_press=self.do_focus, style=btn_style)
+        open_btn_box = toga.Box(
             children=[
-                btn_new,
-                self.btn_close
+                self.btn_new,
+                self.btn_close,
+                self.btn_focus,
+            ],
+            style=Pack(direction=COLUMN)
+        )
+
+        # Buttons next to the close windows table
+        self.btn_reopen = toga.Button('Re-Open Window', on_press=self.do_reopen, style=btn_style)
+        closed_btn_box = toga.Box(
+            children=[
+                self.btn_reopen,
             ],
             style=Pack(direction=COLUMN)
         )
 
         self.table_open_windows = toga.Table(['Open Windows'])
-        # TODO: setup a handler so you can select an item, and then cause
-        # focus to switch to that item. Maybe right click for a menu, or
-        # double tap on it, or select it and press a third button (which
-        # only displays when there is a selection?)
-
         self.table_closed_windows = toga.Table(['Closed Windows'])
 
-        window_box = toga.Box()
-        window_box.style.direction = COLUMN
-        window_box.add(self.table_open_windows)
-        window_box.add(self.table_closed_windows)
+        top_box = toga.Box()
+        top_box.style.direction = ROW
+        top_box.add(self.table_open_windows)
+        top_box.add(open_btn_box)
+
+        bottom_box = toga.Box()
+        bottom_box.style.direction = ROW
+        bottom_box.add(self.table_closed_windows)
+        bottom_box.add(closed_btn_box)
 
         # Outermost box
         outer_box = toga.Box(
-            children=[window_box, btn_box],
+            children=[top_box, bottom_box],
             style=Pack(
                 flex=1,
-                direction=ROW,
+                direction=COLUMN,
                 padding=10,
                 width=500,
-                height=300
+                height=200
             )
         )
 
         # Add the content on the main window
         self.main_window.content = outer_box
+
+        self.update()
 
         # Show the main window
         self.main_window.show()
