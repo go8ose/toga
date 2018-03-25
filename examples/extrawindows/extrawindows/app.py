@@ -35,7 +35,7 @@ class ExampleExtraWindowsApp(toga.App):
         if w['state'] != 'open':
             return
 
-        w['window'].focus()
+        w['window'].show()
 
     def do_reopen(self, widget, **kwargs):
         '''Re-open a closed window'''
