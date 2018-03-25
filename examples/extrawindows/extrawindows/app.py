@@ -8,7 +8,7 @@ class ExampleExtraWindowsApp(toga.App):
     def do_new(self, widget, **kwargs):
         window_name = 'Window ' + str(len(self.windows))
         w = ExtraWindow()
-        w.startup(window_name)
+        w.startup(window_name, self)
         self.windows[window_name] = {'state': 'open', 'window': w}
         self.update()
         w.app = self
@@ -47,6 +47,8 @@ class ExampleExtraWindowsApp(toga.App):
 
         assert w['state'] == 'closed'
 
+        # TODO: this doesn't work, need to debug why. In fact on cocoa it
+        # causes a segfault.
         w['window'].show()
         w['state'] = 'open'
         self.update()
@@ -139,7 +141,9 @@ class ExampleExtraWindowsApp(toga.App):
         self.main_window.show()
 
 class ExtraWindow(toga.Window):
-    def startup(self, name):
+    def startup(self, name, parent_app):
+        self.parent = parent_app
+        self.name = name
         window_index = int(name.split()[1])
 
         # TODO: work out why setting the position doesn't seem to work.
@@ -151,6 +155,13 @@ class ExtraWindow(toga.Window):
         l = toga.Label(name)
         box.add(l)
         self.content = box
+
+    def on_close(self):
+        '''On close also update the main app knowledge of the window
+        closing'''
+        super().on_close()
+        self.parent.windows[self.name]['state'] = 'closed'
+        self.parent.update()
 
 
 def main():
