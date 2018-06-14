@@ -23,6 +23,22 @@ class TestNode(Node):
     def __repr__(self):
         return '<{} at {}>'.format(self.name, id(self))
 
+class TestBox(Node):
+    def __init__(self, name, style, size=None, children=None):
+        super().__init__(style=style, children=children,
+                         applicator=TogaApplicator(self))
+        self.name = name
+        self._impl = Mock()
+        self._children = []
+        if children:
+            for child in children:
+                self.add(child)
+        if size:
+            self.intrinsic.width = size[0]
+            self.intrinsic.height = size[1]
+
+    def __repr__(self):
+        return '<{} at {}>'.format(self.name, id(self))
 
 class TestPackStyleApply(TestCase):
 
@@ -270,3 +286,26 @@ class PackLayoutTests(TestCase):
                 ]},
             ]}
         )
+
+    def test_grid_layout_row_column(self):
+        i_box = TestBox(name='i_box', style=Pack(
+            direction=ROW,
+        ))
+        for i in range(0,5):
+            j_box = TestBox(name='column_{}'.format(i), style=Pack(
+                direction=COLUMN,
+            ))
+            for j in range(0,5):
+                j_box.add(TestNode('node_{}_{}'.format(i,j),
+                    style=Pack(flex=1, padding=50), size=(at_least(120), 30)
+                ))
+            i_box.add(j_box)
+
+
+        root = TestNode(
+            'app', style=Pack(), children=[i_box]
+        )
+
+        # TODO: read the pack algorithm, and work out manually what I expect
+        # the layout to look like, then encode that in the 
+        # assertLayout() statements.
