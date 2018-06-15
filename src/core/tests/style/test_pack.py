@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest import skip
 from unittest.mock import Mock
 
 from travertino.layout import Viewport
@@ -287,25 +288,120 @@ class PackLayoutTests(TestCase):
             ]}
         )
 
+    def print_layout(self, node, depth=0):
+        leading_space = ' '*depth
+        print ("{}{} {}".format(leading_space, node, node.layout))
+        for child in node.children:
+            self.print_layout(child, depth+1)
+
     def test_grid_layout_row_column(self):
-        i_box = TestBox(name='i_box', style=Pack(
+        root = TestBox('root', style=Pack(
+            flex=0,
             direction=ROW,
         ))
-        for i in range(0,5):
-            j_box = TestBox(name='column_{}'.format(i), style=Pack(
+        for i in range(0,2):
+            i_box = TestBox('i_box_{}'.format(i), style=Pack(
+                flex=0,
                 direction=COLUMN,
             ))
-            for j in range(0,5):
-                j_box.add(TestNode('node_{}_{}'.format(i,j),
-                    style=Pack(flex=1, padding=50), size=(at_least(120), 30)
-                ))
-            i_box.add(j_box)
+            for j in range(0,2):
+                i_box.add(
+                    TestNode('node_{}_{}'.format(i,j),
+                        style=Pack(
+                            flex=0, 
+                            padding=5), 
+                        size=(at_least(10), 10)
+                    )
+                )
+            root.add(i_box)
 
 
-        root = TestNode(
-            'app', style=Pack(), children=[i_box]
+
+
+        # Minimum size
+        root.style.layout(root, Viewport(0, 0))
+        self.assertLayout( root, (40, 40),
+            {
+            # root
+            'origin': (0,0),
+            'content': (40, 40),
+            'children': [
+                {
+                #i_box_0
+                'origin': (0,0),
+                'content': (20,40),
+                'children': [
+                    {
+                        #node_0_0
+                        'origin': (5,5),
+                        'content': (10,10),
+                    },
+                    {
+                        #node_0_1
+                        'origin': (5,25),
+                        'content': (10,10),
+                    }
+                ]},
+                {
+                #i_box_1
+                'origin': (20,0),
+                'content': (20,40),
+                'children': [
+                    {
+                        #node_1_0
+                        'origin': (25,5),
+                        'content': (10,10),
+                    },
+                    {
+                        #node_1_1
+                        'origin': (25,25),
+                        'content': (10,10),
+                    }
+                ]}
+            ]}
         )
 
-        # TODO: read the pack algorithm, and work out manually what I expect
-        # the layout to look like, then encode that in the 
-        # assertLayout() statements.
+        # Normal size
+        import pdb; pdb.set_trace()
+        root.style.layout(root, Viewport(640, 480))
+        self.print_layout(root)
+        self.assertLayout( root, (640, 480),
+            {
+            # root
+            'origin': (0,0),
+            'content': (40, 40),
+            'children': [
+                {
+                #i_box_0
+                'origin': (0,0),
+                'content': (20,40),
+                'children': [
+                    {
+                        #node_0_0
+                        'origin': (5,5),
+                        'content': (10,10),
+                    },
+                    {
+                        #node_0_1
+                        'origin': (5,25),
+                        'content': (10,10),
+                    }
+                ]},
+                {
+                #i_box_1
+                'origin': (20,0),
+                'content': (20,40),
+                'children': [
+                    {
+                        #node_1_0
+                        'origin': (25,5),
+                        'content': (10,10),
+                    },
+                    {
+                        #node_1_1
+                        'origin': (25,25),
+                        'content': (10,10),
+                    }
+                ]}
+            ]}
+        )
